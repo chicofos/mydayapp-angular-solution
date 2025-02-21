@@ -7,7 +7,21 @@ const routes: Routes = [
   {
     path: '',
     component: HomeComponent,
-    pathMatch: 'full'
+    pathMatch: 'full',
+  },
+  {
+    path:'pending',
+    component: HomeComponent,
+    data: {
+      completed: false
+    }
+  },
+  {
+    path:'completed',
+    component: HomeComponent,
+    data: {
+      completed: true
+    }
   }
 ];
 

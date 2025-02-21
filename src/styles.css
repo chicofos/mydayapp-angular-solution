@@ -266,6 +266,7 @@ body {
 .todo-list li .destroy:hover,
 .todo-list li .destroy:focus {
   color: #c18585;
+  cursor: pointer;
 }
 
 .todo-list li .destroy:after {

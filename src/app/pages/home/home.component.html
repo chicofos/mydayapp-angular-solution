@@ -1,21 +1,31 @@
 <section class="todoapp">
   <header class="header">
-    <div class="container">
+    <div class="container" [formGroup]="form">
       <h1>My Day</h1>
       <p>All my tasks in one place</p>
       <input
         class="new-todo"
         placeholder="Type new todo"
         autofocus
+        formControlName="title"
         type="text"
+        (keydown.enter)="addTask()"
       />
     </div>
   </header>
   <div class="container todoapp-wrapper">
     <!-- This section should be hidden by default and shown when there are todos -->
-    <section class="main">
+    <section class="main" *ngIf="canSeeActions()">
       <ul class="todo-list">
-        <li class="completed">
+        <li [ngClass]="getMode(task)" *ngFor="let task of tasks">
+          <div class="view">
+            <input class="toggle" type="checkbox" [checked]="task.completed" (click)="onCheck($event, task)"/>
+            <label (dblclick)="editTask(task)">{{task.title}}</label>
+            <button class="destroy"></button>
+          </div>
+          <input #editField class="edit" [value]="task.title" (keydown.escape)="cancel(task)" (keydown.enter)="saveEdit(task, $event)"/>
+        </li>
+        <!-- <li class="completed">
           <div class="view">
             <input class="toggle" type="checkbox" checked />
             <label>Learn JavaScript</label>
@@ -38,27 +48,27 @@
             <button class="destroy"></button>
           </div>
           <input class="edit" value="Make dishes" />
-        </li>
+        </li> -->
       </ul>
     </section>
     <!-- This footer should be hidden by default and shown when there are todos -->
-    <footer class="footer">
+    <footer class="footer" *ngIf="canSeeActions()">
       <!-- This should be `0 items left` by default -->
-      <span class="todo-count"><strong>0</strong> item left</span>
+      <span class="todo-count"><strong>{{getPendingItems()}}</strong> item<ng-container *ngIf="getPendingItems() === 0 || getPendingItems() > 1">s</ng-container> left</span>
       <!-- Remove this if you don't implement routing -->
-      <ul class="filters">
+      <ul class="filters" >
         <li>
-          <a routerLink="/" class="selected">All</a>
+          <a routerLink="/" routerLinkActive="selected" [routerLinkActiveOptions]="{exact: true}">All</a>
         </li>
         <li>
-          <a routerLink="/pending">Pending</a>
+          <a routerLink="/pending" routerLinkActive="selected" [routerLinkActiveOptions]="{exact: true}">Pending</a>
         </li>
         <li>
-          <a routerLink="/completed">Completed</a>
+          <a routerLink="/completed" routerLinkActive="selected" [routerLinkActiveOptions]="{exact: true}">Completed</a>
         </li>
       </ul>
       <!-- Hidden if no completed items are left ↓ -->
-      <button class="clear-completed">Clear completed</button>
+      <button class="clear-completed" (click)="clearCompleted()" *ngIf="canSeeCompletedAction()">Clear completed</button>
     </footer>
   </div>
 </section>
