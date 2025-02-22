@@ -5,8 +5,9 @@ import { ActivatedRoute, Route } from '@angular/router';
 import { TodoTask } from 'src/app/models/todo-task.model';
 
 @Component({
-  selector: 'app-home',
-  templateUrl: './home.component.html',
+    selector: 'app-home',
+    templateUrl: './home.component.html',
+    standalone: false
 })
 export class HomeComponent implements OnInit {
 
