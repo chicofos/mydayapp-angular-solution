@@ -10,19 +10,9 @@ const routes: Routes = [
     pathMatch: 'full',
   },
   {
-    path:'pending',
+    path:':filter',
     component: HomeComponent,
-    data: {
-      completed: false
-    }
   },
-  {
-    path:'completed',
-    component: HomeComponent,
-    data: {
-      completed: true
-    }
-  }
 ];
 
 @NgModule({

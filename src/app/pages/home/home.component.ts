@@ -1,42 +1,51 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, SimpleChange, SimpleChanges, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Route } from '@angular/router';
 
 import { TodoTask } from 'src/app/models/todo-task.model';
+import { TodoTaskService } from 'src/app/services/todo-task.service';
 
 @Component({
-    selector: 'app-home',
-    templateUrl: './home.component.html',
-    standalone: false
+  selector: 'app-home',
+  templateUrl: './home.component.html',
+  standalone: false
 })
 export class HomeComponent implements OnInit {
 
+  @Input() filter!: string;
+
   public tasks: TodoTask[] = [];
-  public originalTasks: TodoTask[] = [];
   public form!: FormGroup;
-  public filter: boolean | undefined;
 
   @ViewChild("editField") editField!: ElementRef;
 
-  constructor(private route: ActivatedRoute) { }
+  constructor(
+    private route: ActivatedRoute,
+    private todoTaskService: TodoTaskService) { }
 
   ngOnInit(): void {
 
     this.form = new FormGroup({
       title: new FormControl()
     });
-
-    const storedData = localStorage.getItem('mydayapp-angular');
-    this.tasks = !!storedData ? JSON.parse(storedData) : [];
-    this.originalTasks = [...this.tasks];
-    this.applyFilter();
+    
+    this.todoTaskService.getTasksObservable().subscribe(tasks => {
+      this.tasks = tasks;
+    });
+    
+    
+    this.route.params.subscribe(params => {
+      this.filter = params['filter'];
+      this.todoTaskService.setFilter(this.filter);
+    });
+    
+    this.todoTaskService.getStoredTasks(this.filter);
   }
 
   public addTask(): void {
     const task = this.form.controls['title'].value;
     if (task && task.trim() !== "") {
-      this.tasks.push({ id: Math.floor(Math.random() * 100), title: task, completed: false, edit: false });
-      this.save();
+      this.todoTaskService.addTask(task);
       this.form.controls['title'].patchValue(null);
     }
   }
@@ -44,7 +53,7 @@ export class HomeComponent implements OnInit {
   public onCheck(event: Event, task: TodoTask): void {
     const checked = (event.target as HTMLInputElement).checked;
     task.completed = checked;
-    this.save();
+    this.todoTaskService.save();
   }
 
   public editTask(task: TodoTask): void {
@@ -60,11 +69,11 @@ export class HomeComponent implements OnInit {
   public saveEdit(task: TodoTask, event: Event): void {
     task.title = (event.target as HTMLInputElement).value.trim();
     task.edit = false;
-    this.save();
+    this.todoTaskService.save();
   }
 
-  public getPendingItems(): number {
-    return this.tasks.filter(x => !x.completed).length;
+  public getCounter(): string {
+    return this.todoTaskService.getCounter();
   }
 
   public canSeeCompletedAction(): boolean {
@@ -72,9 +81,7 @@ export class HomeComponent implements OnInit {
   }
 
   public clearCompleted(): void {
-    this.tasks = this.tasks.filter(x => !x.completed);
-    this.originalTasks = this.originalTasks.filter(x => !x.completed);
-    this.save();
+    this.todoTaskService.clearCompleted();
   }
 
   public canSeeActions(): boolean {
@@ -93,27 +100,4 @@ export class HomeComponent implements OnInit {
     else
       return '';
   }
-
-  private save(): void {
-
-    this.tasks.forEach(o => {
-      let element = this.originalTasks.find(x => x.id === o.id);
-      if (element) {
-        element.completed = o.completed;
-        element.title = o.title;
-      } else {
-        this.originalTasks.push(o);
-      }
-    });
-    localStorage.setItem('mydayapp-angular', JSON.stringify(this.originalTasks));
-    this.applyFilter();
-  }
-
-  private applyFilter(): void {
-    this.filter = this.route.snapshot.data['completed'];
-    if (this.filter !== undefined) {
-      this.tasks = this.originalTasks.filter(x => x.completed === this.route.snapshot.data['completed']);
-    }
-  }
-
 }
