@@ -1,7 +1,6 @@
-import { Component, ElementRef, Input, OnInit, SimpleChange, SimpleChanges, ViewChild } from '@angular/core';
+import { Component, ElementRef, inject, Input, OnChanges, OnInit, SimpleChange, SimpleChanges, ViewChild } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
-import { ActivatedRoute, Route } from '@angular/router';
-
+import { ActivatedRoute } from '@angular/router';
 import { TodoTask } from 'src/app/models/todo-task.model';
 import { TodoTaskService } from 'src/app/services/todo-task.service';
 
@@ -10,36 +9,35 @@ import { TodoTaskService } from 'src/app/services/todo-task.service';
   templateUrl: './home.component.html',
   standalone: false
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnChanges {
 
   @Input() filter!: string;
+  private todoTaskService = inject(TodoTaskService);
 
-  public tasks: TodoTask[] = [];
+  public tasks = this.todoTaskService.filteredTasks;
+  public tasksFilter = this.todoTaskService.filter;
+
   public form!: FormGroup;
 
   @ViewChild("editField") editField!: ElementRef;
 
-  constructor(
-    private route: ActivatedRoute,
-    private todoTaskService: TodoTaskService) { }
+  constructor(private route: ActivatedRoute) { }
 
   ngOnInit(): void {
-
     this.form = new FormGroup({
       title: new FormControl()
     });
-    
-    this.todoTaskService.getTasksObservable().subscribe(tasks => {
-      this.tasks = tasks;
-    });
-    
-    
+
     this.route.params.subscribe(params => {
-      this.filter = params['filter'];
-      this.todoTaskService.setFilter(this.filter);
+      const filterValue = params['filter'] || '';
+      this.tasksFilter.set(filterValue);
     });
-    
-    this.todoTaskService.getStoredTasks(this.filter);
+  }
+
+  public ngOnChanges(changes: SimpleChanges): void {
+    const filter = changes['filter'] as SimpleChange;
+    const filterValue = '' + filter.currentValue?.toString();
+    this.tasksFilter.set(filterValue);
   }
 
   public addTask(): void {
@@ -52,8 +50,7 @@ export class HomeComponent implements OnInit {
 
   public onCheck(event: Event, task: TodoTask): void {
     const checked = (event.target as HTMLInputElement).checked;
-    task.completed = checked;
-    this.todoTaskService.save();
+    this.todoTaskService.changeTaskStatus(task.id, checked);
   }
 
   public editTask(task: TodoTask): void {
@@ -67,9 +64,8 @@ export class HomeComponent implements OnInit {
   }
 
   public saveEdit(task: TodoTask, event: Event): void {
-    task.title = (event.target as HTMLInputElement).value.trim();
-    task.edit = false;
-    this.todoTaskService.save();
+    const title = (event.target as HTMLInputElement).value.trim();
+    this.todoTaskService.changeTaskTitle(task.id, title);
   }
 
   public getCounter(): string {
@@ -77,7 +73,11 @@ export class HomeComponent implements OnInit {
   }
 
   public canSeeCompletedAction(): boolean {
-    return this.tasks.some(x => x.completed);
+    return this.tasks().some(x => x.completed);
+  }
+
+  public removeTask(task: TodoTask): void {
+    this.todoTaskService.removeTask(task.id);
   }
 
   public clearCompleted(): void {
@@ -85,7 +85,7 @@ export class HomeComponent implements OnInit {
   }
 
   public canSeeActions(): boolean {
-    if (this.filter !== undefined) {
+    if (this.tasksFilter() !== undefined) {
       return true;
     }
     return this.tasks.length > 0;

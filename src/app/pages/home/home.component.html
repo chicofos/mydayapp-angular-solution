@@ -17,11 +17,11 @@
     <!-- This section should be hidden by default and shown when there are todos -->
     <section class="main" *ngIf="canSeeActions()">
       <ul class="todo-list">
-        <li [ngClass]="getMode(task)" *ngFor="let task of tasks">
+        <li [ngClass]="getMode(task)" *ngFor="let task of tasks()">
           <div class="view">
             <input class="toggle" type="checkbox" [checked]="task.completed" (click)="onCheck($event, task)"/>
             <label (dblclick)="editTask(task)">{{task.title}}</label>
-            <button class="destroy"></button>
+            <button class="destroy" (click)="removeTask(task)"></button>
           </div>
           <input #editField class="edit" [value]="task.title" (keydown.escape)="cancel(task)" (keydown.enter)="saveEdit(task, $event)"/>
         </li>
